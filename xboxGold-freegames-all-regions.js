@@ -71,11 +71,10 @@ var spider = async (regions) => {
   page.route('**/*', (route) => {
     if (route.request().resourceType() == 'image') { route.abort()} else { route.continue()};
   });
+  console.log('Robot started.')
   for (let i = 0; i < regions.length; i++) {
-    console.log(`visiting ${regions[i].code}: ${regions[i].name}`)
     let url = `https://www.xbox.com/${regions[i].code}/live/gold#gameswithgold`;
-    let regionName = regions[i].name;
-    let regionCode = regions[i].code;
+    console.log(`visiting ${regions[i].code}: ${regions[i].name}`)
     await page.goto(url, {timeout:0});
     await page.waitForSelector('#ContentBlockList_9 section a', {timeout:600*1000});
     var contents = await page.$$eval('#ContentBlockList_9 section a', els => {
@@ -88,8 +87,8 @@ var spider = async (regions) => {
       })
     });
     contents.forEach(e => {
-      e.n = regionName;
-      e.c = regionCode;
+      e.rName = regions[i].name;
+      e.rCode = regions[i].code;
     });
     results = results.concat(contents);
     console.log(`${regions[i].code} done.`)
@@ -118,13 +117,14 @@ async function downloadImage(imageFilename,imageURL) {
   })
 }
 
-async function main(){
+async function main() {
+  console.log(`Job started.`)
   var data = await spider(regions);
   var udata = _.uniqBy(data, 'title');
   var ucsv = papa.unparse(udata, {
     header: true,
     newline: '\r\n',
-    columns:['title','c','date','n','link','img']
+    columns:['title','rCode','date','rName','link','img']
   });
   var filename = 'AllRegionXboxGoldGames.csv'
   if (fs.existsSync(filename)) { fs.unlinkSync(filename) };
