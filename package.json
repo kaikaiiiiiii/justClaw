@@ -1,0 +1,24 @@
+{
+  "name": "justclaw",
+  "version": "1.0.0",
+  "description": "some of my scripts for clawing web info",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaikaiiiiiii/justClaw.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kaikaiiiiiii/justClaw/issues"
+  },
+  "homepage": "https://github.com/kaikaiiiiiii/justClaw#readme",
+  "dependencies": {
+    "axios": "^0.23.0",
+    "papaparse": "^5.3.1",
+    "playwright": "^1.15.2"
+  }
+}
