@@ -16,14 +16,6 @@ const regions = [
     { code: "ja-JP", name: "日本 - 日本語" },
     { code: "ko-KR", name: "대한민국 - 한국어" },
     { code: "en-US", name: "United States - English" },
-    { code: "ar-AE", name: "الإمارات العربية المتحدة - العربية" },
-    { code: "ar-SA", name: "المملكة العربية السعودية - العربية" },
-    { code: "cs-CZ", name: "Česká Republika - Čeština" },
-    { code: "da-DK", name: "Danmark - Dansk" },
-    { code: "de-AT", name: "Österreich - Deutsch" },
-    { code: "de-CH", name: "Schweiz - Deutsch" },
-    { code: "de-DE", name: "Deutschland - Deutsch" },
-    { code: "el-GR", name: "Ελλάδα - Ελληνικά" },
     { code: "en-AU", name: "Australia - English" },
     { code: "en-CA", name: "Canada - English" },
     { code: "en-GB", name: "United Kingdom - English" },
@@ -32,19 +24,27 @@ const regions = [
     { code: "en-NZ", name: "New Zealand - English" },
     { code: "en-SG", name: "Singapore - English" },
     { code: "en-ZA", name: "South Africa - English" },
+    { code: "fr-BE", name: "Belgique - Français" },
+    { code: "fr-CA", name: "Canada - Français" },
+    { code: "fr-CH", name: "Suisse - Français" },
+    { code: "fr-FR", name: "France - Français" },
+    { code: "de-AT", name: "Österreich - Deutsch" },
+    { code: "de-CH", name: "Schweiz - Deutsch" },
+    { code: "de-DE", name: "Deutschland - Deutsch" },
     { code: "es-AR", name: "Argentina - Español" },
     { code: "es-CL", name: "Chile - Español" },
     { code: "es-CO", name: "Colombia - Español" },
     { code: "es-ES", name: "España - Español" },
     { code: "es-MX", name: "México - Español" },
+    { code: "it-IT", name: "Italia - Italiano" },
+    { code: "ar-AE", name: "الإمارات العربية المتحدة - العربية" },
+    { code: "ar-SA", name: "المملكة العربية السعودية - العربية" },
+    { code: "cs-CZ", name: "Česká Republika - Čeština" },
+    { code: "da-DK", name: "Danmark - Dansk" },
+    { code: "el-GR", name: "Ελλάδα - Ελληνικά" },
     { code: "fi-FI", name: "Suomi - Suomi" },
-    { code: "fr-BE", name: "Belgique - Français" },
-    { code: "fr-CA", name: "Canada - Français" },
-    { code: "fr-CH", name: "Suisse - Français" },
-    { code: "fr-FR", name: "France - Français" },
     { code: "he-IL", name: "ישראל - עברית" },
     { code: "hu-HU", name: "Magyarország - Magyar" },
-    { code: "it-IT", name: "Italia - Italiano" },
     { code: "nb-NO", name: "Norge - Norsk bokmål" },
     { code: "nl-BE", name: "België - Nederlands" },
     { code: "nl-NL", name: "Nederland - Nederlands" },
@@ -74,7 +74,7 @@ var spider = async (regions) => {
   console.log('Robot started.')
   for (let i = 0; i < regions.length; i++) {
     let url = `https://www.xbox.com/${regions[i].code}/live/gold#gameswithgold`;
-    console.log(`visiting ${regions[i].code}: ${regions[i].name}`)
+    console.log(`${i+1}\/${regions.length+1} visiting ${regions[i].code}: ${regions[i].name}`)
     await page.goto(url, {timeout:0});
     await page.waitForSelector('#ContentBlockList_9 section a', {timeout:600*1000});
     var contents = await page.$$eval('#ContentBlockList_9 section a', els => {
@@ -91,7 +91,6 @@ var spider = async (regions) => {
       e.rCode = regions[i].code;
     });
     results = results.concat(contents);
-    console.log(`${regions[i].code} done.`)
   }
   await page.close();
   await browser.close();
