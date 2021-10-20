@@ -125,10 +125,15 @@ async function main() {
         columns: ['availDate', 'rCode', 'title', 'storeLink'] //, 'rName', 'source'
     });
     var filename = 'AllRegionXboxGoldGames.csv'
+
+    console.log('==============================');
+    console.log(ucsv);
+    console.log('==============================');
+
     if (fs.existsSync(filename)) { fs.unlinkSync(filename) };
     fs.writeFileSync(filename, ucsv, 'utf-8');
 
-    console.log(`writing data to csv and downloading cover images`)
+    console.log(`writing data to csv and downloading cover images`);
     for (let i = 0; i < udata.length; i++) {
         var item = udata[i];
         var filename = 'A.' + sanitize(item.title) + '.jpg';
