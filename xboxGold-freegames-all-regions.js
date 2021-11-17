@@ -73,7 +73,7 @@ var spider = async (regions) => {
     const domain = 'https://www.xbox.com'
     for (let i = 0; i < regions.length; i++) {
         let url = `${domain}/${regions[i].code}/live/gold#gameswithgold`;
-        console.log(`${i + 1}\/${regions.length} visiting ${regions[i].code}: ${regions[i].name}`)
+        console.log(`${i + 1}\/${regions.length} ${regions[i].code}: ${regions[i].name}`)
         await page.goto(url, { timeout: 0 });
         await page.waitForSelector('#ContentBlockList_9 section a', { timeout: 600 * 1000 });
         var contents = await page.$$eval('#ContentBlockList_9 section a', els => {
