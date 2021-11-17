@@ -61,32 +61,35 @@ const regions = [
 var spider = async (regions) => {
     var results = [];
     const browser = await chromium.launch({
+        proxy: { server: '127.0.0.1:1080' }
         //headless: false,
-    })
+    });
     const page = await browser.newPage()
     await page.setViewportSize({ width: 1200, height: 1000 });
     page.route('**/*', (route) => {
         if (route.request().resourceType() == 'image') { route.abort() } else { route.continue() };
     });
     console.log('Robot started.')
+    const domain = 'https://www.xbox.com'
     for (let i = 0; i < regions.length; i++) {
-        let url = `https://www.xbox.com/${regions[i].code}/live/gold#gameswithgold`;
+        let url = `${domain}/${regions[i].code}/live/gold#gameswithgold`;
         console.log(`${i + 1}\/${regions.length} visiting ${regions[i].code}: ${regions[i].name}`)
         await page.goto(url, { timeout: 0 });
         await page.waitForSelector('#ContentBlockList_9 section a', { timeout: 600 * 1000 });
         var contents = await page.$$eval('#ContentBlockList_9 section a', els => {
             return els.map(el => {
-                var storeLink = el.getAttribute('href');
+                var href = el.getAttribute('href');
                 var img = el.querySelector('img').getAttribute('src');
                 var availDate = el.querySelector('span.availDate').innerText;
                 var title = el.querySelector('h3.c-heading').innerText;
-                return { title, availDate, img, storeLink };
+                return { title, availDate, img, href };
             })
         });
         contents.forEach(e => {
             e.rName = regions[i].name;
             e.rCode = regions[i].code;
             e.source = url;
+            e.storeLink = domain + '/' + e.rCode + e.href.slice(domain.length);
         });
         results = results.concat(contents);
     }
@@ -114,31 +117,53 @@ async function downloadImage(imageFilename, imageURL) {
     })
 }
 
+function readCSV(f) {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(f)) {
+            var a = [];
+            resolve(a);
+        }
+        var content = fs.readFileSync(f, 'utf8');
+        papa.parse(content, {
+            header: true,
+            skipEmptyLines: true,
+            delimiter: ',\t',
+            complete: (results) => {
+                resolve(results.data)
+            },
+        });
+    });
+}
+
+
 async function main() {
     console.log(`Job started.`)
+    var filename = 'AllRegionXboxGoldGames.csv'
     var data = await spider(regions);
-    var udata = _.uniqBy(data, 'title');
+    var old_data = await readCSV(filename);
+    var alldata = data.concat(old_data);
+    var udata = _.uniqBy(alldata, 'title');
     var ucsv = papa.unparse(udata, {
         header: true,
         newline: '\r\n',
         delimiter: ',\t',
         columns: ['availDate', 'rCode', 'title', 'storeLink'] //, 'rName', 'source'
     });
-    var filename = 'AllRegionXboxGoldGames.csv'
 
     console.log('==============================');
     console.log(ucsv);
     console.log('==============================');
-
     if (fs.existsSync(filename)) { fs.unlinkSync(filename) };
-    fs.writeFileSync(filename, ucsv, 'utf-8');
+    fs.appendFileSync(filename, ucsv, 'utf-8');
 
     console.log(`writing data to csv and downloading cover images`);
     for (let i = 0; i < udata.length; i++) {
         var item = udata[i];
         var filename = 'A.' + sanitize(item.title) + '.jpg';
         var imgurl = item.img;
-        await downloadImage(filename, imgurl)
+        if (imgurl == undefined) { continue } else {
+            await downloadImage(filename, imgurl)
+        }
     }
 
     console.log('All jobs done.');
