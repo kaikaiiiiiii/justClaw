@@ -8,12 +8,12 @@ const sanitize = require("sanitize-filename");
 
 
 const regions = [
+    { code: "en-US", name: "United States - English" },
     { code: "zh-HK", name: "香港/澳門特別行政區 - 繁體中文" },
     { code: "zh-TW", name: "台灣 - 繁體中文" },
     { code: "en-HK", name: "Hong Kong/Macau (SAR) - English" },
     { code: "ja-JP", name: "日本 - 日本語" },
     { code: "ko-KR", name: "대한민국 - 한국어" },
-    { code: "en-US", name: "United States - English" },
     { code: "en-AU", name: "Australia - English" },
     { code: "en-CA", name: "Canada - English" },
     { code: "en-GB", name: "United Kingdom - English" },
@@ -60,14 +60,15 @@ const regions = [
 
 var spider = async (regions) => {
     var results = [];
-    const browser = await chromium.launch({
-        proxy: { server: '127.0.0.1:1080' }
-        //headless: false,
-    });
+    var browserConfig = { headless: true };
+    if (process.platform == 'win32') { browserConfig.proxy = { server: '127.0.0.1:1080' }; }
+    if (process.platform == 'darwin') { browserConfig.proxy = { server: '127.0.0.1:1087' }; }
+    const browser = await chromium.launch(browserConfig);
     const page = await browser.newPage()
+    const disabledTypes = ['image', 'font', 'stylesheet'];
     await page.setViewportSize({ width: 1200, height: 1000 });
     page.route('**/*', (route) => {
-        if (route.request().resourceType() == 'image') { route.abort() } else { route.continue() };
+        if (disabledTypes.includes(route.request().resourceType())) { route.abort() } else { route.continue() };
     });
     console.log('Robot started.')
     const domain = 'https://www.xbox.com'
