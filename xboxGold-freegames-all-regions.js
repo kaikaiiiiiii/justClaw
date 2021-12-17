@@ -142,8 +142,16 @@ async function main() {
     var data = await spider(regions);
     var old_data = await readCSV(filename);
     var alldata = data.concat(old_data);
-    var udata = _.uniqBy(alldata, 'title');
+    var udata = _.uniqBy(data, 'title');
     var ucsv = papa.unparse(udata, {
+        header: true,
+        newline: '\r\n',
+        delimiter: ',\t',
+        columns: ['availDate', 'rCode', 'title', 'storeLink'] //, 'rName', 'source'
+    });
+
+    var ualldata = _.uniqBy(alldata, 'title');
+    var uallcsv = papa.unparse(ualldata, {
         header: true,
         newline: '\r\n',
         delimiter: ',\t',
@@ -154,11 +162,11 @@ async function main() {
     console.log(ucsv);
     console.log('==============================');
     if (fs.existsSync(filename)) { fs.unlinkSync(filename) };
-    fs.appendFileSync(filename, ucsv, 'utf-8');
+    fs.appendFileSync(filename, uallcsv, 'utf-8');
 
     console.log(`writing data to csv and downloading cover images`);
     for (let i = 0; i < udata.length; i++) {
-        var item = udata[i];
+        var item = ualldata[i];
         var filename = 'A.' + sanitize(item.title) + '.jpg';
         var imgurl = item.img;
         if (imgurl == undefined) { continue } else {
