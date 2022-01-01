@@ -168,7 +168,7 @@ async function main() {
     console.log(`writing data to csv and downloading cover images`);
     for (let i = 0; i < udata.length; i++) {
         var item = ualldata[i];
-        var filename = 'A.' + sanitize(item.title) + '.jpg';
+        var filename = sanitize('A.' + item.code + '.' + item.title + '.' + item.availDate + '.jpg');
         var imgurl = item.img;
         if (imgurl == undefined) { continue } else {
             await downloadImage(filename, imgurl)
