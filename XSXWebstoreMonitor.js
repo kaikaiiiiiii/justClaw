@@ -41,28 +41,46 @@ function delay(params) {
         }, ms)
     })
 }
-
+/* 核心是参数 is_saleable */
 (async () => {
     var mailcount = 0;
     var wechatcount = 0;
+    var status = [];
     const browser = await chromium.launch({
         // const browser = await chromium.launchPersistentContext("Profiles", {
-        headless: true,
-        devtools: false,
+        headless: false,
         //proxy: {server: 'localhost:1080'},
         timeout: 0,
     });
     const page = await browser.newPage();
-    await page.setViewportSize({ width: 1600, height: 1000 });
     const disabledTypes = ['image', 'font'];
+    const disabledDomain = ['ipinyou.com', 'adobedtm.com', 'omtrdc.net', 'baidu.com'];
+    var a = 'product-addtocart-button1';
+    const list = [
+        'https://cdn.microsoftstore.com.cn/static/version1643603744/frontend/Microsoft/rwd/zh_Hans_CN/js/oneplayer.min.js',
+        'https://az416426.vo.msecnd.net/scripts/c/ms.analytics-web-2.min.js',
+        'https://az725175.vo.msecnd.net/scripts/jsll-4.js',
+        'https://wcpstatic.microsoft.com/mscc/lib/v2/wcp-consent.js',
+        'https://assets.adobedtm.com/launch-EN2c23346949374f60871c2d64aa18ff3c.min.js',
+        'https://hm.baidu.com/h.js?65c86afa131524ede2e7071a40181124',
+        'https://cdn.microsoftstore.com.cn/static/frontend/Microsoft/rwd/zh_Hans_CN/Magento_Theme/js/at.min.js',
+        'https://cdn.microsoftstore.com.cn/static/frontend/Microsoft/rwd/zh_Hans_CN/Magento_Theme/js/at-config.min.js'];
     page.route('**/*', (route) => {
-        if (disabledTypes.includes(route.request().resourceType())) { route.abort() } else { route.continue() };
+        var flag = true;
+        var url = route.request().url();
+        var type = route.request().resourceType();
+        if (disabledDomain.some(item => url.includes(item))) { flag = false; };
+        //if (disabledTypes.includes(type)) { flag = false };
+        if (list.includes(url)) { flag = false };
+        // if (type == 'script') { console.log(url) };
+        if (flag) { route.continue() } else {
+            route.abort()
+        }
     });
     do {
         await page.goto('https://www.microsoftstore.com.cn/xbox-series-x-configurate', { timeout: 0 });
         await page.waitForSelector('#bundleHeaderSummary .box-tocart .fieldset .actions', { timeout: 0 });
-        var status = await page.$eval('#bundleHeaderSummary .box-tocart .fieldset .actions button', el => el.className);
-        status = status.split(' ');
+        status = await page.$eval('#bundleHeaderSummary .box-tocart .fieldset .actions button', el => el.className.split(' '));
         if (status.includes('hide')) {
             mailcount = 0;
             wechatcount = 0;
@@ -71,16 +89,16 @@ function delay(params) {
             var date = new Date();
             var text = `现在时间：${date}<br/ ><a href='https://www.microsoftstore.com.cn/xbox-series-x-configurate'>https://www.microsoftstore.com.cn/xbox-series-x-configurate</a>`
             if (mailcount % 10 == 0 && mailcount < 100) {
-                await sendMail(title, text)
+                //await sendMail(title, text)
             }
             if (wechatcount % 3 == 0 && wechatcount < 10) {
-                await sendWechat(title, text);
+                //await sendWechat(title, text);
             }
             mailcount++;
             wechatcount++;
         }
         await delay()
-    } while (true);
-    await page.close();
-    await browser.close();
+    } while (false);
+    //await page.close();
+    //await browser.close();
 })();
