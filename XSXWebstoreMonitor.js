@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const axios = require('axios');
+const { memoryUsage } = require('process');
 const config = require('./config.js');
 
 const header = {
@@ -25,7 +26,7 @@ async function sendMail(title, text) {
         subject: title,
         html: text
     });
-    console.log("发送成功", info);
+    console.log("sendMail", info.response);
 }
 
 async function sendWechat(title, message) {
@@ -33,11 +34,12 @@ async function sendWechat(title, message) {
     var emessage = encodeURIComponent(message);
     var url = `http://wx.xtuis.cn/${config.wechat.token}.send?text=${etitle}&desp=${emessage}`;
     var response = await axios.get(url);
-    console.log('sendWechat', response)
+    console.log('sendWechat', response.status)
 }
 
 function delay(params) {
     var ms = params || Math.random() * 2000 + 5000;
+    console.log('delay', ms);
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             resolve()
@@ -48,40 +50,25 @@ function delay(params) {
 
 /* 核心是参数 is_saleable */
 (async () => {
-    var stock = false;
-    var patten = /\"is_saleable\"\:\s*false/;
-    try {
-        const { data } = await axios.get('https://www.microsoftstore.com.cn/xbox-series-x-configurate/', {
-            headers: header
-        });
-        console.log(data);
-    } catch (e) {
-        console.log(Object.keys(e), e.message);
-    }
-    // // console.log(content.statusText);
-    // // console.log(content.headers);
-    // console.log(content.config);
-    // // console.log(content.request);
-    /*
-        do {
-    
-            if (true) {
-                mailcount = 0;
-                wechatcount = 0;
-            } else {
-                var title = `微软商城 XBOX 有货`
-                var date = new Date();
-                var text = `现在时间：${date}<br/ ><a href='https://www.microsoftstore.com.cn/xbox-series-x-configurate'>https://www.microsoftstore.com.cn/xbox-series-x-configurate</a>`
-                if (mailcount % 10 == 0 && mailcount < 100) {
-                    //await sendMail(title, text)
-                }
-                if (wechatcount % 3 == 0 && wechatcount < 10) {
-                    //await sendWechat(title, text);
-                }
-                mailcount++;
-                wechatcount++;
-            }
-            await delay()
-        } while (false);
-    */
+    var content = '';
+    var patten = /\"is_saleable\"\:\s*true/;
+    var matchflag = false;
+    do {
+        try {
+            const { data } = await axios.get('https://www.microsoftstore.com.cn/xbox-series-x-configurate/', {
+                headers: header
+            });
+            content = data;
+        } catch (e) {
+            console.log(Object.keys(e), e.message);
+        }
+        matchflag = patten.test(content)
+        if (matchflag) {
+            sendMail('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
+            sendWechat('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
+        }
+        console.log(matchflag);
+        console.log(memoryUsage.rss());
+        await delay()
+    } while (false);
 })();
