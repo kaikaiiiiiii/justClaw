@@ -38,8 +38,8 @@ async function sendWechat(title, message) {
 }
 
 function delay(params) {
-    var ms = params || Math.random() * 2000 + 5000;
-    console.log('delay', ms);
+    var ms = params || Math.random() * 3000 + 3000;
+    console.log('Delay:\t', ms);
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             resolve()
@@ -50,25 +50,24 @@ function delay(params) {
 
 /* 核心是参数 is_saleable */
 (async () => {
-    var content = '';
     var patten = /\"is_saleable\"\:\s*true/;
-    var matchflag = false;
     do {
         try {
             const { data } = await axios.get('https://www.microsoftstore.com.cn/xbox-series-x-configurate/', {
-                headers: header
+                headers: header,
+		    timeout: 2500
             });
-            content = data;
-        } catch (e) {
-            console.log(Object.keys(e), e.message);
+            var match = patten.test(data);
+            console.log('Check:\t', match);
+            if (match) {
+                sendMail('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
+                sendWechat('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
+            }
+        } catch (error) {
+            console.log('ERR:\t',Object.entries(error));
         }
-        matchflag = patten.test(content)
-        if (matchflag) {
-            sendMail('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
-            sendWechat('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
-        }
-        console.log(matchflag);
-        console.log(memoryUsage.rss());
+        console.log('MEM:\t', memoryUsage.rss());
+        console.log('NOW:\t', new Date());
         await delay()
-    } while (false);
+    } while (true); //change to true befor release
 })();
