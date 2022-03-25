@@ -38,7 +38,11 @@ async function sendWechat(title, message) {
 }
 
 function delay(params) {
+<<<<<<< HEAD:xsxmon.js
     var ms = params || Math.random() * 3000 + 3000;
+=======
+    var ms = params || Math.random() * 2000 + 5000;
+>>>>>>> ed43b9b5e9be229a18eea7c1abf2ed112adcf868:XSXWebstoreMonitor.js
     console.log('Delay:\t', ms);
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -64,10 +68,18 @@ function delay(params) {
                 sendWechat('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
             }
         } catch (error) {
+<<<<<<< HEAD:xsxmon.js
             console.log('ERR:\t',Object.entries(error));
+=======
+            console.log(Object.entries(error));
+>>>>>>> ed43b9b5e9be229a18eea7c1abf2ed112adcf868:XSXWebstoreMonitor.js
         }
         console.log('MEM:\t', memoryUsage.rss());
         console.log('NOW:\t', new Date());
         await delay()
+<<<<<<< HEAD:xsxmon.js
     } while (true); //change to true befor release
+=======
+    } while (false); //change to true befor release
+>>>>>>> ed43b9b5e9be229a18eea7c1abf2ed112adcf868:XSXWebstoreMonitor.js
 })();
