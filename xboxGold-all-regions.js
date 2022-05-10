@@ -56,45 +56,53 @@ const regions = [
     // { code: "zh-CN", name: "中国 - 中文" }, 
 ];
 
+var black = ['zh-CN', 'id-ID', 'en-MY', 'en-PH', 'vi-VN', 'th-TH']
 
-var spider = async (regions) => {
-    var results = [];
-    var browserConfig = { headless: true };
-    if (process.platform == 'win32') { browserConfig.proxy = { server: '127.0.0.1:1080' }; }
-    if (process.platform == 'darwin') { browserConfig.proxy = { server: '127.0.0.1:1087' }; }
-    const browser = await chromium.launch(browserConfig);
-    const page = await browser.newPage()
-    const disabledTypes = ['image', 'font', 'stylesheet'];
-    await page.setViewportSize({ width: 1200, height: 1000 });
-    page.route('**/*', (route) => {
-        if (disabledTypes.includes(route.request().resourceType())) { route.abort() } else { route.continue() };
+var locale = async (page) => {
+
+    var localePage = 'https://www.xbox.com/en-US/Shell/ChangeLocale';
+    await page.goto(localePage, { 'timeout': 60 * 1000 });
+    await page.waitForSelector('#PageContent > div.container > div.form-row > div > div.row > a', { timeout: 30 * 1000 });
+    var content = await page.$$eval('#PageContent > div.container > div.form-row > div > div.row > a', els => {
+        var codematch = /(?<=\/)[a-zA-Z]{2}-[a-zA-Z]{2}(?=\/)/;
+        return els.map(el => {
+            return {
+                code: el.href.match(codematch)[0],
+                name: el.textContent
+            }
+        })
     });
-    console.log('Robot started.')
+    return content.filter(el => black.includes(el.code) == false);
+}
+
+
+var spider = async (regions, page) => {
+    var results = [];
     const domain = 'https://www.xbox.com'
     for (let i = 0; i < regions.length; i++) {
         let url = `${domain}/${regions[i].code}/live/gold#gameswithgold`;
         console.log(`${i + 1}\/${regions.length} ${regions[i].code}: ${regions[i].name}`)
-        await page.goto(url, { timeout: 0 });
-        await page.waitForSelector('#ContentBlockList_9 section a', { timeout: 600 * 1000 });
-        var contents = await page.$$eval('#ContentBlockList_9 section a', els => {
-            return els.map(el => {
-                var href = el.getAttribute('href');
-                var img = el.querySelector('img').getAttribute('src');
-                var availDate = el.querySelector('span.availDate').innerText;
-                var title = el.querySelector('h3.c-heading').innerText;
-                return { title, availDate, img, href };
-            })
-        });
-        contents.forEach(e => {
-            e.rName = regions[i].name;
-            e.rCode = regions[i].code;
-            e.source = url;
-            e.storeLink = domain + '/' + e.rCode + e.href.slice(domain.length);
-        });
+        try {
+            await page.goto(url, { timeout: 60 * 1000 });
+            await page.waitForSelector('#ContentBlockList_9 section a', { timeout: 30 * 1000 });
+            var contents = await page.$$eval('#ContentBlockList_9 section a', els => {
+                return els.map(el => {
+                    var href = el.getAttribute('href');
+                    var img = el.querySelector('img').getAttribute('src');
+                    var availDate = el.querySelector('span.availDate').innerText;
+                    var title = el.querySelector('h3.c-heading').innerText;
+                    return { title, availDate, img, href };
+                })
+            });
+            contents.forEach(e => {
+                e.rName = regions[i].name;
+                e.rCode = regions[i].code;
+                e.source = url;
+                e.storeLink = domain + '/' + e.rCode + e.href.slice(domain.length);
+            });
+        } catch { e => console.log(e) }
         results = results.concat(contents);
     }
-    await page.close();
-    await browser.close();
     return results
 }
 
@@ -144,6 +152,9 @@ function shrinkBy(arr, key) {
         } else {
             o[e[key]].rCode = o[e[key]].rCode + ',' + e.rCode;
         }
+        var codes = o[e[key]].rCode.split(',');
+        codes = codes.filter((v, i, a) => a.indexOf(v) === i);
+        o[e[key]].rCode = codes.join(',');
     });
     return Object.values(o);
 }
@@ -156,20 +167,45 @@ var papaOutputFormat = {
 }
 
 async function main() {
-    console.log(`Job started.`)
-    var filename = 'AllRegionXboxGoldGames.csv'
-    var data = await spider(regions);
-    var old_data = await readCSV(filename);
-    var alldata = data.concat(old_data);
+    console.log('Job started.')
+    var browserConfig = { headless: true };
+    if (process.platform == 'win32') { browserConfig.proxy = { server: '127.0.0.1:1080' }; }
+    if (process.platform == 'darwin') { browserConfig.proxy = { server: '127.0.0.1:1087' }; }
+    const browser = await chromium.launch(browserConfig);
+    const page = await browser.newPage()
+    const disabledTypes = ['image', 'font', 'stylesheet'];
+    await page.setViewportSize({ width: 1200, height: 1000 });
+    page.route('**/*', (route) => {
+        if (disabledTypes.includes(route.request().resourceType())) { route.abort() } else { route.continue() };
+    });
+
+    // add unique new locales to defined regions
+    var localesnow = await locale(page);
+    var adds = localesnow.filter(el => regions.find(r => r.code == el.code) == undefined);
+    var locales = regions.concat(adds);
+    console.log('Locales loaded:' + locales.length);
+
+    // spider games
+    var data = await spider(locales, page);
+
+    // close browser
+    await page.close();
+    await browser.close();
+
+
+    //udata for console print
     var udata = shrinkBy(data, 'title');
     var ucsv = papa.unparse(udata, papaOutputFormat);
-
-    var ualldata = shrinkBy(alldata, 'title');
-    var uallcsv = papa.unparse(ualldata, papaOutputFormat);
-
     console.log('==============================');
     console.log(ucsv.replaceAll('\t', '\r\n'));
     console.log('==============================');
+
+    //ualldata for csv file output
+    var filename = 'AllRegionXboxGoldGames.csv'
+    var old_data = await readCSV(filename);
+    var alldata = data.concat(old_data);
+    var ualldata = shrinkBy(alldata, 'title');
+    var uallcsv = papa.unparse(ualldata, papaOutputFormat);
     if (fs.existsSync(filename)) { fs.unlinkSync(filename) };
     fs.appendFileSync(filename, uallcsv, 'utf-8');
 
@@ -187,4 +223,3 @@ async function main() {
 }
 
 main();
-

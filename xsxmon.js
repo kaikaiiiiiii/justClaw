@@ -7,6 +7,8 @@ const header = {
     'User-Agent': 'Mozilla/ 5.0(Macintosh; Intel Mac OS X 10_15_7) AppleWebKit / 537.36(KHTML, like Gecko) Chrome / 98.0.4758.109 Safari / 537.36'
 }
 
+var mailcount = 0;
+var wechatcount = 0;
 
 async function sendMail(title, text) {
     var user = config.mail.user; //自己的邮箱
@@ -32,17 +34,18 @@ async function sendMail(title, text) {
 async function sendWechat(title, message) {
     var etitle = encodeURIComponent(title);
     var emessage = encodeURIComponent(message);
-    var url = `http://wx.xtuis.cn/${config.wechat.token}.send?text=${etitle}&desp=${emessage}`;
-    var response = await axios.get(url);
+    var tokens = config.wechat.token;
+    for (let t = 0; t < tokens.length; t++) {
+        var thistoken = tokens[t];
+        var url = `http://wx.xtuis.cn/${thistoken}.send?text=${etitle}&desp=${emessage}`;
+        var response = await axios.get(url);
+        console.log(response);
+    }
     console.log('sendWechat', response.status)
 }
 
 function delay(params) {
-<<<<<<< HEAD:xsxmon.js
     var ms = params || Math.random() * 3000 + 3000;
-=======
-    var ms = params || Math.random() * 2000 + 5000;
->>>>>>> ed43b9b5e9be229a18eea7c1abf2ed112adcf868:XSXWebstoreMonitor.js
     console.log('Delay:\t', ms);
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -54,32 +57,32 @@ function delay(params) {
 
 /* 核心是参数 is_saleable */
 (async () => {
-    var patten = /\"is_saleable\"\:\s*true/;
+    var salepatten = /\"is_saleable\"\:\s*true/;
+    var miniapppatten = /\"only_miniapp\"\:\s*true/;
     do {
         try {
             const { data } = await axios.get('https://www.microsoftstore.com.cn/xbox-series-x-configurate/', {
                 headers: header,
-		    timeout: 2500
+                timeout: 2500
             });
-            var match = patten.test(data);
-            console.log('Check:\t', match);
-            if (match) {
-                sendMail('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
-                sendWechat('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
+            var salematch = salepatten.test(data);
+            var miniappmatch = !miniapppatten.test(data);
+            console.log(salematch, miniappmatch);
+            if (salematch && miniappmatch) {
+                if (mailcount < 3 || mailcount % 100 == 0) {
+                    sendMail('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
+                }
+                if (wechatcount < 3 || wechatcount % 13 == 3) {
+                    sendWechat('XSX 在售', 'https://www.microsoftstore.com.cn/xbox-series-x-configurate/');
+                }
+                mailcount++;
+                wechatcount++;
             }
         } catch (error) {
-<<<<<<< HEAD:xsxmon.js
-            console.log('ERR:\t',Object.entries(error));
-=======
-            console.log(Object.entries(error));
->>>>>>> ed43b9b5e9be229a18eea7c1abf2ed112adcf868:XSXWebstoreMonitor.js
+            console.log('ERR:\t', Object.entries(error));
         }
         console.log('MEM:\t', memoryUsage.rss());
         console.log('NOW:\t', new Date());
         await delay()
-<<<<<<< HEAD:xsxmon.js
     } while (true); //change to true befor release
-=======
-    } while (false); //change to true befor release
->>>>>>> ed43b9b5e9be229a18eea7c1abf2ed112adcf868:XSXWebstoreMonitor.js
 })();
