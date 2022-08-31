@@ -170,7 +170,7 @@ async function main() {
     console.log('Job started.')
     var browserConfig = { headless: true };
     if (process.platform == 'win32') { browserConfig.proxy = { server: '127.0.0.1:1080' }; }
-    if (process.platform == 'darwin') { browserConfig.proxy = { server: '127.0.0.1:1087' }; }
+    if (process.platform == 'darwin') { browserConfig.proxy = { server: '127.0.0.1:7890' }; }
     const browser = await chromium.launch(browserConfig);
     const page = await browser.newPage()
     const disabledTypes = ['image', 'font', 'stylesheet'];
