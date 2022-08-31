@@ -212,7 +212,7 @@ async function main() {
     console.log(`writing data to csv and downloading cover images`);
     for (let i = 0; i < udata.length; i++) {
         var item = ualldata[i];
-        var filename = sanitize('A.' + item.rCode.split(',')[0] + '.' + item.title + '.' + item.availDate.match(/\d{1,2}\/\d{1,2}/g)[0].replaceAll('\/', '-') + '.jpg');
+        var filename = sanitize('A.' + item.title + '.' + item.rCode.split(',')[0] + '.' + item.availDate.match(/\d{1,2}\/\d{1,2}/g)[0].replaceAll('\/', '-') + '.jpg');
         var imgurl = item.img;
         if (imgurl == undefined) { continue } else {
             await downloadImage(filename, imgurl)
