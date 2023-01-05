@@ -52,28 +52,14 @@ const regions = [
     { code: "sk-SK", name: "Slovensko - Slovenčina" },
     { code: "sv-SE", name: "Sverige - Svenska" },
     { code: "tr-TR", name: "Türkiye - Türkçe" },
-    // China mainland xbox gold has no free games, don't uncommet it
+    // list below has no xbox gold free games, don't uncommet it
     // { code: "zh-CN", name: "中国 - 中文" }, 
+    // { code: "id-ID", name: "Indonesia - Bahasa Indonesia" },
+    // { code: "en-MY", name: "Malaysia - English" },
+    // { code: "en-PH", name: "Philippines - English" },
+    // { code: "vi-VN", name: "Việt Nam - Tiếng việt" },
+    // { code: "th-TH", name: "ไทย - ไทย" },
 ];
-
-var black = ['zh-CN', 'id-ID', 'en-MY', 'en-PH', 'vi-VN', 'th-TH']
-
-var locale = async (page) => {
-
-    var localePage = 'https://www.xbox.com/en-US/Shell/ChangeLocale';
-    await page.goto(localePage, { 'timeout': 60 * 1000 });
-    await page.waitForSelector('#PageContent > div.container > div.form-row > div > div.row > a', { timeout: 30 * 1000 });
-    var content = await page.$$eval('#PageContent > div.container > div.form-row > div > div.row > a', els => {
-        var codematch = /(?<=\/)[a-zA-Z]{2}-[a-zA-Z]{2}(?=\/)/;
-        return els.map(el => {
-            return {
-                code: el.href.match(codematch)[0],
-                name: el.textContent
-            }
-        })
-    });
-    return content.filter(el => black.includes(el.code) == false);
-}
 
 
 var spider = async (regions, page) => {
@@ -179,19 +165,12 @@ async function main() {
         if (disabledTypes.includes(route.request().resourceType())) { route.abort() } else { route.continue() };
     });
 
-    // add unique new locales to defined regions
-    var localesnow = await locale(page);
-    var adds = localesnow.filter(el => regions.find(r => r.code == el.code) == undefined);
-    var locales = regions.concat(adds);
-    console.log('Locales loaded:' + locales.length);
-
     // spider games
-    var data = await spider(locales, page);
+    var data = await spider(regions, page);
 
     // close browser
     await page.close();
     await browser.close();
-
 
     //udata for console print
     var udata = shrinkBy(data, 'title');
