@@ -5,6 +5,7 @@ const path = require('path');
 const papa = require('papaparse');
 const sanitize = require("sanitize-filename");
 
+console.log('version: 20230526')
 
 const regions = [
     { code: "en-US", name: "United States - English" },
@@ -52,6 +53,7 @@ const regions = [
     { code: "sk-SK", name: "Slovensko - Slovenčina" },
     { code: "sv-SE", name: "Sverige - Svenska" },
     { code: "tr-TR", name: "Türkiye - Türkçe" },
+    ///////////////////////////////////////////////////////////
     // list below has no xbox gold free games, don't uncommet it
     // { code: "zh-CN", name: "中国 - 中文" }, 
     // { code: "id-ID", name: "Indonesia - Bahasa Indonesia" },
@@ -67,6 +69,7 @@ var spider = async (regions, page) => {
     const domain = 'https://www.xbox.com'
     for (let i = 0; i < regions.length; i++) {
         let url = `${domain}/${regions[i].code}/live/gold#gameswithgold`;
+        // console.log(url);
         console.log(`${i + 1}\/${regions.length} ${regions[i].code}: ${regions[i].name}`)
         try {
             await page.goto(url, { timeout: 60 * 1000 });
@@ -97,6 +100,8 @@ async function downloadImage(imageFilename, imageURL) {
     const url = imageURL;
     const fpath = path.resolve(__dirname, imageFilename)
     const writer = fs.createWriteStream(fpath);
+
+    console.log(`downloading ${url} to ${imageFilename}`)
 
     const response = await axios({
         url,
@@ -150,16 +155,17 @@ var papaOutputFormat = {
     newline: '\r\n',
     delimiter: ',\t',
     columns: ['title', 'availDate', 'storeLink', 'rCode'] //, 'rName', 'source'
-}
+};
 
 async function main() {
     console.log('Job started.')
-    var browserConfig = { headless: true };
-    if (process.platform == 'win32') { browserConfig.proxy = { server: '127.0.0.1:1080' }; }
+    var browserConfig = { headless: false };
+    if (process.platform == 'win32') { browserConfig.proxy = { server: '127.0.0.1:7890' }; }
     if (process.platform == 'darwin') { browserConfig.proxy = { server: '127.0.0.1:7890' }; }
     const browser = await chromium.launch(browserConfig);
     const page = await browser.newPage()
     const disabledTypes = ['image', 'font', 'stylesheet'];
+    // const disabledTypes = ['font'];
     await page.setViewportSize({ width: 1200, height: 1000 });
     page.route('**/*', (route) => {
         if (disabledTypes.includes(route.request().resourceType())) { route.abort() } else { route.continue() };
